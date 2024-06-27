@@ -1,5 +1,7 @@
 import { OpenAPIV3 } from 'openapi-types';
 
+import { z } from 'zod';
+import zodToJsonSchema from 'zod-to-json-schema';
 import { OpenApiRouter } from '../types';
 import { getOpenApiPathsObject } from './paths';
 import { errorResponseObject } from './schema';
@@ -14,6 +16,7 @@ export type GenerateOpenApiDocumentOptions = {
   docsUrl?: string;
   tags?: string[];
   securitySchemes?: OpenAPIV3.ComponentsObject['securitySchemes'];
+  defs?: any;
 };
 
 export const generateOpenApiDocument = (
@@ -26,6 +29,14 @@ export const generateOpenApiDocument = (
       scheme: 'bearer',
     },
   };
+
+  const jsonOut = zodToJsonSchema(z.object({}), {
+    $refStrategy: 'root',
+    definitions: opts.defs,
+  });
+
+  const defsJson = jsonOut.definitions;
+
   return {
     openapi: openApiVersion,
     info: {
@@ -38,12 +49,13 @@ export const generateOpenApiDocument = (
         url: opts.baseUrl,
       },
     ],
-    paths: getOpenApiPathsObject(appRouter, Object.keys(securitySchemes)),
+    paths: getOpenApiPathsObject(appRouter, Object.keys(securitySchemes), opts.defs),
     components: {
       securitySchemes,
       responses: {
         error: errorResponseObject,
       },
+      schemas: defsJson as any,
     },
     tags: opts.tags?.map((tag) => ({ name: tag })),
     externalDocs: opts.docsUrl ? { url: opts.docsUrl } : undefined,

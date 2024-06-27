@@ -16,9 +16,21 @@ import {
   zodSupportsCoerce,
 } from '../utils/zod';
 
-const zodSchemaToOpenApiSchemaObject = (zodSchema: z.ZodType): OpenAPIV3.SchemaObject => {
+const zodSchemaToOpenApiSchemaObject = (
+  zodSchema: z.ZodType,
+  defs?: any,
+): OpenAPIV3.SchemaObject => {
   // FIXME: https://github.com/StefanTerdell/zod-to-json-schema/issues/35
-  return zodToJsonSchema(zodSchema, { target: 'openApi3', $refStrategy: 'none' }) as any;
+  const out = zodToJsonSchema(zodSchema, {
+    target: 'openApi3',
+    $refStrategy: 'root',
+    definitions: defs ?? {},
+    definitionPath: 'components/schemas',
+  }) as any;
+  if (out['components/schemas']) {
+    delete out['components/schemas'];
+  }
+  return out;
 };
 
 export const getParameterObjects = (
@@ -278,13 +290,17 @@ export const getResponsesObject = (
   schema: unknown,
   example: Record<string, any> | undefined,
   headers: Record<string, OpenAPIV3.HeaderObject | OpenAPIV3.ReferenceObject> | undefined,
+  defs?: any,
 ): OpenAPIV3.ResponsesObject => {
   const successResponseObject: OpenAPIV3.ResponseObject = {
     description: 'Successful response',
     headers: headers,
     content: {
       'application/json': {
-        schema: zodSchemaToOpenApiSchemaObject(instanceofZodType(schema) ? schema : z.unknown()),
+        schema: zodSchemaToOpenApiSchemaObject(
+          instanceofZodType(schema) ? schema : z.unknown(),
+          defs,
+        ),
         example,
       },
     },

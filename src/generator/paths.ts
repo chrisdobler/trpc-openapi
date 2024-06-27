@@ -10,6 +10,7 @@ import { getParameterObjects, getRequestBodyObject, getResponsesObject } from '.
 export const getOpenApiPathsObject = (
   appRouter: OpenApiRouter,
   securitySchemeNames: string[],
+  defs?: any,
 ): OpenAPIV3.PathsObject => {
   const pathsObject: OpenAPIV3.PathsObject = {};
   const procedures = (appRouter as any)._def.procedures as OpenApiProcedureRecord; // TODO: BUG: This type isn't quite right...
@@ -94,7 +95,12 @@ export const getOpenApiPathsObject = (
                   ) || []),
                 ],
               }),
-          responses: getResponsesObject(outputParser, openapi.example?.response, openapi.responseHeaders),
+          responses: getResponsesObject(
+            outputParser,
+            openapi.example?.response,
+            openapi.responseHeaders,
+            defs,
+          ),
           ...(openapi.deprecated ? { deprecated: openapi.deprecated } : {}),
         },
       };
