@@ -32,10 +32,11 @@ export const generateOpenApiDocument = (
 
   const jsonOut = zodToJsonSchema(z.object({}), {
     $refStrategy: 'root',
-    definitions: opts.defs,
-  });
+    definitions: opts.defs ?? {},
+    definitionPath: 'components/schemas',
+  }) as any;
 
-  const defsJson = jsonOut.definitions;
+  const defsJson = jsonOut['components/schemas'];
 
   return {
     openapi: openApiVersion,
