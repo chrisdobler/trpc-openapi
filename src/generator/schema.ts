@@ -26,7 +26,7 @@ export const getParameterObjects = (
   pathParameters: string[],
   inType: 'all' | 'path' | 'query',
   example: Record<string, any> | undefined,
-  arrayParameterName: string = "parameter", // Optional parameter name for arrays
+  arrayParameterName = 'parameter', // Optional parameter name for arrays
 ): OpenAPIV3.ParameterObject[] | undefined => {
   if (!instanceofZodType(schema)) {
     throw new TRPCError({
@@ -163,10 +163,7 @@ export const getRequestBodyObject = (
     return undefined;
   }
 
-  if (
-    !instanceofZodTypeObject(unwrappedSchema) &&
-    !instanceofZodTypeArray(unwrappedSchema)
-  ) {
+  if (!instanceofZodTypeObject(unwrappedSchema) && !instanceofZodTypeArray(unwrappedSchema)) {
     throw new TRPCError({
       message: 'Input parser must be a ZodObject or ZodArray',
       code: 'INTERNAL_SERVER_ERROR',
@@ -188,10 +185,7 @@ export const getRequestBodyObject = (
     const dedupedObjectSchema = unwrappedSchema.omit(mask);
 
     // If all keys are path parameters
-    if (
-      pathParameters.length > 0 &&
-      Object.keys(dedupedObjectSchema.shape).length === 0
-    ) {
+    if (pathParameters.length > 0 && Object.keys(dedupedObjectSchema.shape).length === 0) {
       return undefined;
     }
 
@@ -283,21 +277,14 @@ export const errorResponseObject: OpenAPIV3.ResponseObject = {
 export const getResponsesObject = (
   schema: unknown,
   example: Record<string, any> | undefined,
-  headers: Record<string, OpenAPIV3.HeaderObject | OpenAPIV3.ReferenceObject> | undefined
+  headers: Record<string, OpenAPIV3.HeaderObject | OpenAPIV3.ReferenceObject> | undefined,
 ): OpenAPIV3.ResponsesObject => {
-  if (!instanceofZodType(schema)) {
-    throw new TRPCError({
-      message: 'Output parser expects a Zod validator',
-      code: 'INTERNAL_SERVER_ERROR',
-    });
-  }
-
   const successResponseObject: OpenAPIV3.ResponseObject = {
     description: 'Successful response',
     headers: headers,
     content: {
       'application/json': {
-        schema: zodSchemaToOpenApiSchemaObject(schema),
+        schema: zodSchemaToOpenApiSchemaObject(instanceofZodType(schema) ? schema : z.unknown()),
         example,
       },
     },
